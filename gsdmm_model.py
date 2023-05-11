@@ -9,63 +9,85 @@ from gensim.utils import simple_preprocess
 import gensim.corpora as corpora
 import nltk
 import pickle
+pd.options.mode.chained_assignment = None
 
-# Read data into papers
-papers = pd.read_parquet('C:/Users/Minec/PycharmProjects/dissTopicModel/venv/data/measuring-hate-speech.parquet')
-#papers2 = pd.read_csv('C:/Users/Minec/PycharmProjects/dissTopicModel/venv/data/hatespeechdset.csv')
-# Remove the columns
-papers = papers[['text']]
-#papers2 = papers2[['text']]
+class modelTrain:
+    def __init__(self, data):
+        self.tweets = None
+        print(data)
+        if data.endswith('.csv'):
+            self.tweets = pd.read_csv(data)
+        elif data.endswith('.parquet'):
+            self.tweets = pd.read_parquet(data)
 
-# Remove punctuation
-papers['text_processed'] = \
-papers['text'].map(lambda x: re.sub('[,\.!?]', '', x))
-#papers2['text2_processed'] = \
-#papers2['text'].map(lambda x: re.sub('[,\.!?]', '', x))
-# Convert the titles to lowercase
-papers['text_processed'] = \
-papers['text_processed'].map(lambda x: x.lower())
-#papers2['text2_processed'] = \
-#papers2['text2_processed'].map(lambda x: x.lower())
+        self.stop_words = stopwords.words('english')
+        self.stop_words.extend(
+            ['url', 'need', 'want', 'the', 'u', 'etc', 'sorry', 'help', 'cute', 'one', 'please', 'like', 'many', 'love',
+             'get', 'say', 'think', 'good', 'think',
+             'love', 'would', 'saying', 'much', 'see', 'great', 'could', 'us', 'time', 'makes', 'world', 'let', 'nice',
+             'full', 'really', 'well', 'wish', 'full',
+             'al', 'igbo', 'abeg', 'miraj', 'lailat', 'make', 'new', 'nawaz', 'nugs', 'mubarak', 'notwithstanding',
+             'sucking', 'yt', 'ya', 'ur', 'show', 'add',
+             'sh', 'tr', 'losangeles', 'children', 'hope', 'even', 'work', 'know', 'eat', 'look', 'wa', 'ha', 'thanks', 'thank'])
 
-stop_words = stopwords.words('english')
-stop_words.extend(['url', 'need', 'want', 'the', 'u', 'etc', 'sorry', 'help', 'cute', 'one', 'please', 'like', 'many', 'love', 'get', 'say', 'think', 'good', 'think',
-                   'love', 'would', 'saying', 'much', 'see', 'great', 'could', 'us', 'time', 'makes', 'world', 'let', 'nice', 'full', 'really', 'well', 'wish', 'full',
-                   'al', 'igbo', 'abeg', 'miraj', 'lailat', 'make', 'new', 'nawaz', 'nugs', 'mubarak', 'notwithstanding', 'sucking', 'yt', 'ya', 'ur', 'show', 'add',
-                   'sh', 'tr', 'losangeles', 'children', 'hope', 'even', 'work', 'know', 'eat', 'look', 'wa', 'ha'])
+        self.lemmatizer = WordNetLemmatizer()
 
-lemmatizer = WordNetLemmatizer()
+    def sent_to_words(self, sentences):
+        for sentence in sentences:
+            yield ([self.lemmatizer.lemmatize(word) for word in gensim.utils.simple_preprocess(str(sentence), deacc=True)])
 
-def sent_to_words(sentences):
-    for sentence in sentences:
-        yield([lemmatizer.lemmatize(word) for word in gensim.utils.simple_preprocess(str(sentence), deacc=True)])
-def remove_stopwords(texts):
-    return [[word for word in simple_preprocess(str(doc))
-             if word not in stop_words] for doc in texts]
+    def remove_stopwords(self, texts):
+        return [[word for word in simple_preprocess(str(doc))
+                 if word not in self.stop_words] for doc in texts]
 
-data = papers.text_processed.values.tolist()
-#papers2_list = papers2.text2_processed.tolist()
-#data.extend(papers2_list)
-print(len(data))
-data_words = list(sent_to_words(data))
-# remove stop words
-data_words = remove_stopwords(data_words)
+    def preProcessData(self, tweets):
+        # Remove the columns
+        self.tweets = tweets[['text']]
 
-# Create Dictionary
-id2word = corpora.Dictionary(data_words)
+        # Remove punctuation
+        self.tweets['text_processed'] = \
+            self.tweets['text'].map(lambda x: re.sub('[,\.!?]', '', x))
+        # Convert the titles to lowercase
+        self.tweets['text_processed'] = \
+            self.tweets['text_processed'].map(lambda x: x.lower())
 
-# Create Corpus
-texts = data_words
-# Term Document Frequency
-corpus = [id2word.doc2bow(text) for text in texts]
+        self.data = self.tweets.text_processed.values.tolist()
+        self.data_words = list(self.sent_to_words(self.data))
+        # remove stop words
+        self.data_words = self.remove_stopwords(self.data_words)
 
-vocab_length = len(id2word)
+        return self.data_words
 
-# initialize GSDMM
-gsdmm = MovieGroupProcess(K=20, alpha=0.1, beta=1, n_iters=14)
+    def saveModel(self, model, texts, corpus, dict):
+        with open('./models/gsdmm_models/model.pkl', 'wb') as f:
+            pickle.dump(model, f)
+        with open('./models/gsdmm_models/model_texts.pkl', 'wb') as f:
+            pickle.dump(texts, f)
+        with open('./models/gsdmm_models/model_corpus.pkl', 'wb') as f:
+            pickle.dump(corpus, f)
+        with open('./models/gsdmm_models/model_dict.pkl', 'wb') as f:
+            pickle.dump(dict, f)
 
-# fit GSDMM model
-gsdmm.fit(texts, vocab_length)
+    def train(self, data_words):
+        # Create Dictionary
+        self.id2word = corpora.Dictionary(data_words)
 
-with open('model.pkl', 'wb') as f:
-    pickle.dump(gsdmm, f)
+        # Create Corpus
+        self.texts = data_words
+        # Term Document Frequency
+        self.corpus = [self.id2word.doc2bow(text) for text in self.texts]
+
+        self.vocab_length = len(self.id2word)
+
+        # initialize GSDMM
+        self.gsdmm = MovieGroupProcess(K=20, alpha=0.1, beta=0.3, n_iters=22)
+
+        # fit GSDMM model
+        self.gsdmm.fit(self.texts, self.vocab_length, None)
+
+        self.saveModel(self.gsdmm, data_words, self.corpus, self.id2word)
+
+if __name__ == "__main__":
+    mt = modelTrain('./data/measuring-hate-speech.parquet')
+    data = mt.preProcessData(mt.tweets)
+    mt.train(data)
