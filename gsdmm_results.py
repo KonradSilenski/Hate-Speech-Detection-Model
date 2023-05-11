@@ -2,7 +2,7 @@ import gsdmm
 import numpy as np
 import pickle
 
-with open('model_old.pkl', 'rb') as f:
+with open('./models/gsdmm_models/model_old.pkl', 'rb') as f:
     gsdmm = pickle.load(f)
 
 # print number of documents per topic
@@ -21,4 +21,3 @@ def top_words(cluster_word_distribution, top_cluster, values):
 
 # get top words in topics
 top_words(gsdmm.cluster_word_distribution, top_index, 15)
-#print(gsdmm.cluster_word_distribution)

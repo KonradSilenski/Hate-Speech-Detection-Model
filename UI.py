@@ -84,7 +84,7 @@ class UIWindow(QWidget):
     def textBoxExec(self):
         if self.text_edit.text() == '':
             return
-        analyser = ta.analyseData('./model_old.pkl', self.text_edit.text(), False)
+        analyser = ta.analyseData('./models/gsdmm_models/model_049.pkl', self.text_edit.text(), False)
         df = analyser.sendResult()
         text = df[1]
         df = df[0]
@@ -98,7 +98,7 @@ class UIWindow(QWidget):
         selected_file = self.file_dropdown.currentText()
         if self.selectedFile == None:
             return
-        analyser = ta.analyseData('./models/gsdmm_models/model.pkl', './data/' + self.selectedFile, True)
+        analyser = ta.analyseData('./models/gsdmm_models/model_049.pkl', './data/' + self.selectedFile, True)
         df = analyser.sendResult()
         text = df[1]
         df = df[0]

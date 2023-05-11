@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import re
 from wordcloud import WordCloud
-
+#leg
 os.chdir('..')
 # Read data into papers
 papers = pd.read_parquet('C:/Users/Minec/PycharmProjects/dissTopicModel/venv/data/measuring-hate-speech.parquet')

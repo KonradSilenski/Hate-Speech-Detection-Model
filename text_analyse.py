@@ -51,7 +51,7 @@ class analyseData:
             text = dataset
             text = text.lower()
         self.textout = text
-        text_stems = self.preProcessData(text, self.getTopWords(self.model, 10))
+        text_stems = self.preProcessData(text, self.getTopWords(self.model, 50))
         self.result = self.createTopicsDataframe(data_text=text_stems,  model=self.model, threshold=0.3, topic_dict=self.topic_dict)
 
     def sendResult(self):
@@ -113,5 +113,5 @@ class analyseData:
         return self.result
 
 if __name__ == "__main__":
-    ad = analyseData('./models/gsdmm_models/model.pkl', './data/measuring-hate-speech.parquet', True)
+    ad = analyseData('./models/gsdmm_models/model_old.pkl', './data/measuring-hate-speech.parquet', True)
     print(ad.sendResult())
